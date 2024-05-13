@@ -11,7 +11,11 @@
 #include <algorithm>
 #include "lz4.h"
 
+#include <godot_cpp/variant/utility_functions.hpp>
+
 GpuVideoReader::GpuVideoReader(Ref<FileAccess> io, bool onMemory) {
+    // UtilityFunctions::print("GpuVideoReader::GpuVideoReader() onMemory: ", onMemory);
+
     _onMemory = onMemory;
     
 	_io = io;
@@ -35,6 +39,13 @@ GpuVideoReader::GpuVideoReader(Ref<FileAccess> io, bool onMemory) {
     _framePerSecond = _io->get_float();
     _format = static_cast<GPU_COMPRESS>(_io->get_32());
     _frameBytes = _io->get_32();
+
+    // UtilityFunctions::print("GpuVideoReader::GpuVideoReader() _width: ", _width);
+    // UtilityFunctions::print("GpuVideoReader::GpuVideoReader() _height: ", _height);
+    // UtilityFunctions::print("GpuVideoReader::GpuVideoReader() _frameCount: ", _frameCount);
+    // UtilityFunctions::print("GpuVideoReader::GpuVideoReader() _framePerSecond: ", _framePerSecond);
+    // UtilityFunctions::print("GpuVideoReader::GpuVideoReader() _format: ", _format);
+    // UtilityFunctions::print("GpuVideoReader::GpuVideoReader() _frameBytes: ", _frameBytes);
     
     // read address
     _lz4Blocks.resize(_frameCount);
@@ -46,6 +57,7 @@ GpuVideoReader::GpuVideoReader(Ref<FileAccess> io, bool onMemory) {
     if(buf.size() != sizeof(Lz4Block) * _frameCount) {
         assert(0);
     }
+    memcpy(_lz4Blocks.data(), buf.ptr(), sizeof(Lz4Block) * _frameCount);
     
     // read all if needed
     if(_onMemory) {
@@ -57,6 +69,7 @@ GpuVideoReader::GpuVideoReader(Ref<FileAccess> io, bool onMemory) {
         if(_io->get_buffer(_rawSize).size() != _rawSize) {
             assert(0);
         }
+        memcpy(_memory.data(), _io->get_buffer(_rawSize).ptr(), _rawSize);
 		// _io.reset();
     } else {
 		_io->seek(kRawMemoryAt);
@@ -80,19 +93,30 @@ PackedByteArray GpuVideoReader::read(int frame) {
         out_buf.resize(_frameBytes);
         LZ4_decompress_safe((const char *)_memory.data() + lz4block.address, (char *)out_buf.ptr(), static_cast<int>(lz4block.size), _frameBytes);
     } else {
+        UtilityFunctions::print("GpuVideoReader::read() frame: ", frame);
+        UtilityFunctions::print("GpuVideoReader::read() lz4block.address: ", lz4block.address);
 		_io->seek(lz4block.address);
         // if(_io->read(_lz4Buffer.data(), lz4block.size) != lz4block.size) {
         //     assert(0);
         // }
         PackedByteArray buf = _io->get_buffer(lz4block.size);
+        // UtilityFunctions::print("GpuVideoReader::read() buf.size(): ", buf.size());
+        // UtilityFunctions::print("GpuVideoReader::read() lz4block.size: ", lz4block.size);
+        if(buf.size() != lz4block.size) {
+            assert(0);
+        }
+        memcpy(_lz4Buffer.data(), buf.ptr(), lz4block.size);
         out_buf.resize(_frameBytes);
         // LZ4_decompress_safe((const char *)_lz4Buffer.data(), (char *)dst, static_cast<int>(lz4block.size), _frameBytes);
         LZ4_decompress_safe((const char *)buf.ptr(), (char *)out_buf.ptr(), static_cast<int>(lz4block.size), _frameBytes);
+        // UtilityFunctions::print("GpuVideoReader::read() _frameBytes: ", _frameBytes);
+        // UtilityFunctions::print("GpuVideoReader::read() out_buf.size(): ", out_buf.size());
     }
     return out_buf;
 }
 
 PackedByteArray GpuVideoReader::read_at_time(float time) {
+    UtilityFunctions::print("GpuVideoReader::read_at_time() time: ", time);
     int frame = static_cast<int>(time * _framePerSecond);
     frame = std::max(0, std::min(static_cast<int>(_lz4Blocks.size()) - 1, frame));
     return read(frame);

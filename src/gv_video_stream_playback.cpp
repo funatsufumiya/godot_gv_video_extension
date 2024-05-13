@@ -85,14 +85,40 @@ void GVVideoStreamPlayback::_update(double delta) {
     if (reader.has_value()) {
         PackedByteArray buffer = reader->read_at_time(playback_position);
 
+        UtilityFunctions::print("GVVideoStreamPlayback::_update() buffer.size(): ", buffer.size());
+        UtilityFunctions::print("GVVideoStreamPlayback::_update() reader->getWidth(): ", reader->getWidth());
+        UtilityFunctions::print("GVVideoStreamPlayback::_update() reader->getHeight(): ", reader->getHeight());
+        UtilityFunctions::print("GVVideoStreamPlayback::_update() reader->getGodotImageFormat(): ", reader->getGodotImageFormat());
+
+        // if (!image.is_valid()) {
+        //     image.instantiate();
+        // }
+
+        // UtilityFunctions::print("GVVideoStreamPlayback::_update() reader->getWidth(): ", reader->getWidth());
+
         // update image
-        image->set_data(
-            reader->getWidth(),
-            reader->getHeight(),
-            false,
-            reader->getGodotImageFormat(),
-            buffer
-        );
+        if (image.is_null()) {
+            UtilityFunctions::print("GVVideoStreamPlayback::_update() image is null");
+            image->create_from_data(
+                reader->getWidth(),
+                reader->getHeight(),
+                false,
+                reader->getGodotImageFormat(),
+                buffer
+            );
+        }else {
+            UtilityFunctions::print("GVVideoStreamPlayback::_update() image is not null");
+            image->set_data(
+                reader->getWidth(),
+                reader->getHeight(),
+                false,
+                reader->getGodotImageFormat(),
+                buffer
+            );
+        }
+
+        UtilityFunctions::print("GVVideoStreamPlayback::_update() image->get_width(): ", image->get_width());
+        UtilityFunctions::print("GVVideoStreamPlayback::_update() image->get_height(): ", image->get_height());
 
         // update texture
         if (!texture.is_valid()
