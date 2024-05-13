@@ -4,7 +4,10 @@
 #include <godot_cpp/classes/file_access.hpp>
 #include <godot_cpp/classes/video_stream_playback.hpp>
 #include <godot_cpp/classes/texture2d.hpp>
+#include <godot_cpp/classes/image_texture.hpp>
 #include <godot_cpp/core/class_db.hpp>
+
+#include "gv_video_reader.hpp"
 
 using namespace godot;
 
@@ -17,12 +20,15 @@ protected:
     bool is_paused = false;
     double playback_position = 0.0;
     double dummy_length = 5.0;
+    Ref<ImageTexture> texture;
+    Ref<Image> image;
+    std::optional<GpuVideoReader> reader;
 
 public:
     GVVideoStreamPlayback();
     ~GVVideoStreamPlayback();
 
-    Error load(Ref<FileAccess> p_file_access);
+    Error load(Ref<FileAccess> p_file_access, bool onMemory);
 
     void _stop() override;
     void _play() override;

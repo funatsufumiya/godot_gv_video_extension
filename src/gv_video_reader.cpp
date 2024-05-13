@@ -72,18 +72,41 @@ GpuVideoReader::GpuVideoReader(Ref<FileAccess> io, bool onMemory) {
 GpuVideoReader::~GpuVideoReader() {
 
 }
-void GpuVideoReader::read(uint8_t *dst, int frame) const {
+PackedByteArray GpuVideoReader::read(int frame) {
     assert(0 <= frame && frame < _lz4Blocks.size());
     Lz4Block lz4block = _lz4Blocks[frame];
+    PackedByteArray out_buf;
     if(_onMemory) {
-        LZ4_decompress_safe((const char *)_memory.data() + lz4block.address, (char *)dst, static_cast<int>(lz4block.size), _frameBytes);
+        out_buf.resize(_frameBytes);
+        LZ4_decompress_safe((const char *)_memory.data() + lz4block.address, (char *)out_buf.ptr(), static_cast<int>(lz4block.size), _frameBytes);
     } else {
 		_io->seek(lz4block.address);
         // if(_io->read(_lz4Buffer.data(), lz4block.size) != lz4block.size) {
         //     assert(0);
         // }
         PackedByteArray buf = _io->get_buffer(lz4block.size);
+        out_buf.resize(_frameBytes);
         // LZ4_decompress_safe((const char *)_lz4Buffer.data(), (char *)dst, static_cast<int>(lz4block.size), _frameBytes);
-        LZ4_decompress_safe((const char *)buf.ptr(), (char *)dst, static_cast<int>(lz4block.size), _frameBytes);
+        LZ4_decompress_safe((const char *)buf.ptr(), (char *)out_buf.ptr(), static_cast<int>(lz4block.size), _frameBytes);
+    }
+    return out_buf;
+}
+
+PackedByteArray GpuVideoReader::read_at_time(float time) {
+    int frame = static_cast<int>(time * _framePerSecond);
+    frame = std::max(0, std::min(static_cast<int>(_lz4Blocks.size()) - 1, frame));
+    return read(frame);
+}
+
+godot::Image::Format GpuVideoReader::getGodotImageFormat() const {
+    switch(_format) {
+        case GPU_COMPRESS_DXT1:
+            return Image::Format::FORMAT_DXT1;
+        case GPU_COMPRESS_DXT3:
+            return Image::Format::FORMAT_DXT3;
+        case GPU_COMPRESS_DXT5:
+            return Image::Format::FORMAT_DXT5;
+        case GPU_COMPRESS_BC7:
+            return Image::Format::FORMAT_BPTC_RGBA;
     }
 }

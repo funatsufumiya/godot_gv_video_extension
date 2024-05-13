@@ -11,10 +11,14 @@ class GVVideoStream : public VideoStream {
 
 protected:
 	static void _bind_methods();
+    bool on_memory = false;
 
 public:
     GVVideoStream();
     ~GVVideoStream();
+
+    bool get_on_memory() const { return on_memory; }
+    void set_on_memory(bool value) { on_memory = value; }
 
 	Ref<VideoStreamPlayback> _instantiate_playback() override;
 };

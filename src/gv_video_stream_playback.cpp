@@ -18,8 +18,10 @@ GVVideoStreamPlayback::~GVVideoStreamPlayback()
 {
 }
 
-Error GVVideoStreamPlayback::load(Ref<FileAccess> p_file_access)
+Error GVVideoStreamPlayback::load(Ref<FileAccess> p_file_access, bool onMemory)
 {
+    reader.emplace(p_file_access, onMemory);
+    // reader.emplace(std::make_optional<GpuVideoReader>(p_file_access, onMemory));
     return OK;
 }
 
@@ -68,18 +70,45 @@ void GVVideoStreamPlayback::_set_audio_track(int32_t idx) {
 }
 
 Ref<Texture2D> GVVideoStreamPlayback::_get_texture() const {
-    UtilityFunctions::print("GVVideoStreamPlayback::_get_texture() not implemented");
-    return nullptr;
+    return texture;
 }
 
 void GVVideoStreamPlayback::_update(double delta) {
-    playback_position += delta;
-    if (playback_position >= dummy_length) {
-        playback_position = dummy_length;
-        _stop();
+    if (is_playing && !is_paused) {
+        playback_position += delta;
+        if (playback_position >= dummy_length) {
+            playback_position = dummy_length;
+            _stop();
+        }
     }
 
-    UtilityFunctions::print("GVVideoStreamPlayback::_update() playback_position: ", playback_position);
+    if (reader.has_value()) {
+        PackedByteArray buffer = reader->read_at_time(playback_position);
+
+        // update image
+        image->set_data(
+            reader->getWidth(),
+            reader->getHeight(),
+            false,
+            reader->getGodotImageFormat(),
+            buffer
+        );
+
+        // update texture
+        if (!texture.is_valid()
+            || texture->get_width() != reader->getWidth()
+            || texture->get_height() != reader->getHeight()
+            || texture->get_format() != reader->getGodotImageFormat()
+            )
+        {
+            texture->set_image(image);
+        }else{
+            texture->update(image);
+        }
+    }
+    
+
+    // UtilityFunctions::print("GVVideoStreamPlayback::_update() playback_position: ", playback_position);
 }
 
 int32_t GVVideoStreamPlayback::_get_channels() const {

@@ -14,6 +14,7 @@
 
 #include <godot_cpp/classes/ref.hpp>
 #include <godot_cpp/classes/file_access.hpp>
+#include <godot_cpp/classes/image.hpp>
 
 using namespace godot;
 
@@ -26,11 +27,14 @@ public:
     virtual uint32_t getFrameCount() const = 0;
     virtual float getFramePerSecond() const = 0;
     virtual GPU_COMPRESS getFormat() const = 0;
+    virtual godot::Image::Format getGodotImageFormat() const = 0;
     virtual uint32_t getFrameBytes() const = 0;
     
     virtual bool isThreadSafe() const = 0;
     
-    virtual void read(uint8_t *dst, int frame) const = 0;
+    // virtual void read(uint8_t *dst, int frame) const = 0;
+    virtual PackedByteArray read(int frame) = 0;
+    virtual PackedByteArray read_at_time(float time) = 0;
 };
 
 class GpuVideoReader : public IGpuVideoReader {
@@ -41,16 +45,19 @@ public:
     GpuVideoReader(const GpuVideoReader&) = delete;
     void operator=(const GpuVideoReader&) = delete;
     
-    uint32_t getWidth() const { return _width; }
-    uint32_t getHeight() const { return _height; }
-    uint32_t getFrameCount() const { return _frameCount; }
-    float getFramePerSecond() const { return _framePerSecond; }
-    GPU_COMPRESS getFormat() const { return _format; }
-    uint32_t getFrameBytes() const { return _frameBytes; }
+    uint32_t getWidth() const override { return _width; }
+    uint32_t getHeight() const override { return _height; }
+    uint32_t getFrameCount() const override { return _frameCount; }
+    float getFramePerSecond() const override { return _framePerSecond; }
+    GPU_COMPRESS getFormat() const override { return _format; }
+    godot::Image::Format getGodotImageFormat() const override;
     
-    bool isThreadSafe() const { return _onMemory; }
+    uint32_t getFrameBytes() const override { return _frameBytes; }
     
-    void read(uint8_t *dst, int frame) const;
+    bool isThreadSafe() const override { return _onMemory; }
+    
+    PackedByteArray read(int frame) override;
+    PackedByteArray read_at_time(float time) override;
 private:
     bool _onMemory = false;
     
