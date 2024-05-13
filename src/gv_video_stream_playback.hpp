@@ -19,7 +19,6 @@ protected:
     bool is_playing = false;
     bool is_paused = false;
     double playback_position = 0.0;
-    double dummy_length = 5.0;
     Ref<ImageTexture> texture;
     Ref<Image> image;
     std::optional<GpuVideoReader> reader;

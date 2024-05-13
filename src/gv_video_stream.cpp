@@ -27,11 +27,11 @@ Ref<VideoStreamPlayback> GVVideoStream::_instantiate_playback()
 {
     // return Ref<GVVideoStreamPlayback>();
 
-    UtilityFunctions::print("GVVideoStream::_instantiate_playback()");
+    // UtilityFunctions::print("GVVideoStream::_instantiate_playback()");
 
     Ref<FileAccess> fa = FileAccess::open(get_file(), FileAccess::READ);
 
-    UtilityFunctions::print("GVVideoStream::_instantiate_playback file: ", get_file(), ", on_memory: ", on_memory);
+    // UtilityFunctions::print("GVVideoStream::_instantiate_playback file: ", get_file(), ", on_memory: ", on_memory);
 
     if (!fa.is_valid()) {
         return nullptr;

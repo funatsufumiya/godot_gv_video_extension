@@ -55,7 +55,11 @@ bool GVVideoStreamPlayback::_is_paused() const {
 }
 
 double GVVideoStreamPlayback::_get_length() const {
-    return dummy_length;
+    if (reader.has_value()) {
+        return reader->getFrameCount() / reader->getFramePerSecond();
+    }else{
+        return 0.0;
+    }
 }
 
 double GVVideoStreamPlayback::_get_playback_position() const {
@@ -63,13 +67,13 @@ double GVVideoStreamPlayback::_get_playback_position() const {
 }
 
 void GVVideoStreamPlayback::_seek(double time) {
-    UtilityFunctions::print("GVVideoStreamPlayback::_seek() time: ", time);
+    // UtilityFunctions::print("GVVideoStreamPlayback::_seek() time: ", time);
     playback_position = time;
 }
 
 void GVVideoStreamPlayback::_set_audio_track(int32_t idx) {
     // do nothing
-    UtilityFunctions::push_warning("GVVideoStreamPlayback::_set_audio_track() do nothing");
+    // UtilityFunctions::push_warning("GVVideoStreamPlayback::_set_audio_track() do nothing");
 }
 
 Ref<Texture2D> GVVideoStreamPlayback::_get_texture() const {
@@ -79,8 +83,8 @@ Ref<Texture2D> GVVideoStreamPlayback::_get_texture() const {
 void GVVideoStreamPlayback::_update(double delta) {
     if (is_playing && !is_paused) {
         playback_position += delta;
-        if (playback_position >= dummy_length) {
-            playback_position = dummy_length;
+        if (playback_position >= _get_length()) {
+            playback_position = _get_length();
             _stop();
         }
     }
