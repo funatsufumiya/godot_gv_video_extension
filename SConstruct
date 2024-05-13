@@ -2,6 +2,14 @@
 from glob import glob
 from pathlib import Path
 
+# define tests
+AddOption(
+    "--tests",
+    dest="tests",
+    default="no",
+    help="Enable tests (yes/no).",
+)
+
 # TODO: Do not copy environment after godot-cpp/test is updated <https://github.com/godotengine/godot-cpp/blob/master/test/SConstruct>.
 env = SConscript("godot-cpp/SConstruct")
 
@@ -53,4 +61,18 @@ else:
         source=sources,
     )
 
-Default(library)
+# if tests=yes, TESTS_ENABLED is defined in the source code.
+if GetOption("tests") == "yes":
+    env.Append(CPPPATH=["test/"])
+    sources = Glob("test/*.cpp")
+    
+    # run test_main
+    test_main = env.Program("test/test_main", sources)
+    env.Depends(test_main, library)
+    env.AlwaysBuild(test_main)
+    env.AddPostAction(test_main, "./test/test_main")
+
+    Default([library, test_main])
+
+else:
+    Default(library)

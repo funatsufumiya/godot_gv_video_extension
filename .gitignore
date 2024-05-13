@@ -12,3 +12,6 @@
 
 # Editors
 .vscode/
+
+/test/test_main
+/test/*.o
