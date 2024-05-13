@@ -23,5 +23,3 @@ stream = SubResource("GVVideoStream_sunn7")
 volume_db = -80.0
 autoplay = true
 loop = true
-
-[node name="MyNode" type="MyNode" parent="."]
