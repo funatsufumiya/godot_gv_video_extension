@@ -74,6 +74,7 @@ GpuVideoReader::GpuVideoReader(Ref<FileAccess> io, bool onMemory) {
         memcpy(_memory.data(), buf.ptr(), _rawSize);
 
 		// _io.reset();
+        _io->close();
     } else {
 		_io->seek(kRawMemoryAt);
         
