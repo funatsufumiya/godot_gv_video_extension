@@ -110,7 +110,7 @@ PackedByteArray GpuVideoReader::read(int frame) {
         if(buf.size() != lz4block.size) {
             assert(0);
         }
-        memcpy(_lz4Buffer.data(), buf.ptr(), lz4block.size);
+        // memcpy(_lz4Buffer.data(), buf.ptr(), lz4block.size); // FIXME: want to avoid copy
         out_buf.resize(_frameBytes);
         // LZ4_decompress_safe((const char *)_lz4Buffer.data(), (char *)dst, static_cast<int>(lz4block.size), _frameBytes);
         LZ4_decompress_safe((const char *)buf.ptr(), (char *)out_buf.ptr(), static_cast<int>(lz4block.size), _frameBytes);
