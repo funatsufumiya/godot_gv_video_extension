@@ -31,7 +31,7 @@ Ref<VideoStreamPlayback> GVVideoStream::_instantiate_playback()
     UtilityFunctions::print("GVVideoStream::_instantiate_playback file: " + get_file());
 
     if (!fa.is_valid()) {
-        return Ref<VideoStreamPlayback>();
+        return nullptr;
     }
     Ref<GVVideoStreamPlayback> pb;
     pb.instantiate();
