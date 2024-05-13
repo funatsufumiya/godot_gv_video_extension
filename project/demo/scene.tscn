@@ -1,8 +1,18 @@
-[gd_scene load_steps=2 format=3 uid="uid://c7u64tpv6byvb"]
+[gd_scene load_steps=3 format=3 uid="uid://c7u64tpv6byvb"]
 
 [ext_resource type="Script" path="res://demo/scene.gd" id="1_lih0m"]
 
+[sub_resource type="GVVideoStream" id="GVVideoStream_sunn7"]
+file = "res://alpha-countdown-blue.gv"
+
 [node name="Scene" type="Node"]
 script = ExtResource("1_lih0m")
+
+[node name="Node2D" type="Node2D" parent="."]
+
+[node name="VideoStreamPlayer" type="VideoStreamPlayer" parent="Node2D"]
+offset_right = 40.0
+offset_bottom = 40.0
+stream = SubResource("GVVideoStream_sunn7")
 
 [node name="MyNode" type="MyNode" parent="."]

@@ -7,6 +7,8 @@
 #include <godot_cpp/godot.hpp>
 #include <godot_cpp/variant/utility_functions.hpp>
 
+#include "gv_video_stream.hpp"
+#include "gv_video_stream_playback.hpp"
 #include "my_node.hpp"
 #include "my_singleton.hpp"
 
@@ -18,6 +20,8 @@ void gdextension_initialize(ModuleInitializationLevel p_level)
 {
 	if (p_level == MODULE_INITIALIZATION_LEVEL_SCENE)
 	{
+		ClassDB::register_class<GVVideoStreamPlayback>();
+		ClassDB::register_class<GVVideoStream>();
 		ClassDB::register_class<MyNode>();
 		ClassDB::register_class<MySingleton>();
 
