@@ -12,6 +12,9 @@ void GVVideoStreamPlayback::_bind_methods()
 
 GVVideoStreamPlayback::GVVideoStreamPlayback()
 {
+    if (texture.is_null()) {
+        texture = ImageTexture::create_from_image(Image::create(1, 1, false, Image::FORMAT_RGBA8));
+    }
 }
 
 GVVideoStreamPlayback::~GVVideoStreamPlayback()
@@ -85,29 +88,30 @@ void GVVideoStreamPlayback::_update(double delta) {
     if (reader.has_value()) {
         PackedByteArray buffer = reader->read_at_time(playback_position);
 
-        UtilityFunctions::print("GVVideoStreamPlayback::_update() buffer.size(): ", buffer.size());
-        UtilityFunctions::print("GVVideoStreamPlayback::_update() reader->getWidth(): ", reader->getWidth());
-        UtilityFunctions::print("GVVideoStreamPlayback::_update() reader->getHeight(): ", reader->getHeight());
-        UtilityFunctions::print("GVVideoStreamPlayback::_update() reader->getGodotImageFormat(): ", reader->getGodotImageFormat());
-
-        // if (!image.is_valid()) {
-        //     image.instantiate();
-        // }
-
+        // UtilityFunctions::print("GVVideoStreamPlayback::_update() buffer.size(): ", buffer.size());
         // UtilityFunctions::print("GVVideoStreamPlayback::_update() reader->getWidth(): ", reader->getWidth());
+        // UtilityFunctions::print("GVVideoStreamPlayback::_update() reader->getHeight(): ", reader->getHeight());
+        // UtilityFunctions::print("GVVideoStreamPlayback::_update() reader->getGodotImageFormat(): ", reader->getGodotImageFormat());
 
         // update image
         if (image.is_null()) {
-            UtilityFunctions::print("GVVideoStreamPlayback::_update() image is null");
-            image->create_from_data(
+            // UtilityFunctions::print("GVVideoStreamPlayback::_update() image is null");
+            
+            // create dummy buffer for test
+            // PackedByteArray dummy_buffer;
+            // dummy_buffer.resize(reader->getWidth() * reader->getHeight() * 4);
+
+            image = Image::create_from_data(
                 reader->getWidth(),
                 reader->getHeight(),
                 false,
                 reader->getGodotImageFormat(),
                 buffer
+                // Image::FORMAT_RGBA8,
+                // dummy_buffer
             );
         }else {
-            UtilityFunctions::print("GVVideoStreamPlayback::_update() image is not null");
+            // UtilityFunctions::print("GVVideoStreamPlayback::_update() image is not null");
             image->set_data(
                 reader->getWidth(),
                 reader->getHeight(),
@@ -117,11 +121,14 @@ void GVVideoStreamPlayback::_update(double delta) {
             );
         }
 
-        UtilityFunctions::print("GVVideoStreamPlayback::_update() image->get_width(): ", image->get_width());
-        UtilityFunctions::print("GVVideoStreamPlayback::_update() image->get_height(): ", image->get_height());
+        // UtilityFunctions::print("GVVideoStreamPlayback::_update() image->get_width(): ", image->get_width());
+        // UtilityFunctions::print("GVVideoStreamPlayback::_update() image->get_height(): ", image->get_height());
 
         // update texture
-        if (!texture.is_valid()
+        if (texture.is_null()) {
+            // UtilityFunctions::print("GVVideoStreamPlayback::_update() texture is null");
+            texture = ImageTexture::create_from_image(image);
+        }else if (!texture.is_valid()
             || texture->get_width() != reader->getWidth()
             || texture->get_height() != reader->getHeight()
             || texture->get_format() != reader->getGodotImageFormat()

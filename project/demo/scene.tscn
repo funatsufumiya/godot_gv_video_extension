@@ -10,11 +10,20 @@ script = ExtResource("1_lih0m")
 
 [node name="Node2D" type="Node2D" parent="."]
 
-[node name="VideoStreamPlayer" type="VideoStreamPlayer" parent="Node2D"]
-offset_right = 40.0
-offset_bottom = 40.0
+[node name="Camera2D" type="Camera2D" parent="Node2D"]
+
+[node name="AspectRatioContainer" type="AspectRatioContainer" parent="Node2D"]
+offset_left = -356.0
+offset_top = -208.0
+offset_right = 442.0
+offset_bottom = 242.0
+ratio = 1.7778
+
+[node name="VideoStreamPlayer" type="VideoStreamPlayer" parent="Node2D/AspectRatioContainer"]
+layout_mode = 2
 stream = SubResource("GVVideoStream_sunn7")
 volume_db = -80.0
 autoplay = true
+loop = true
 
 [node name="MyNode" type="MyNode" parent="."]
