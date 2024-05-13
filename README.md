@@ -21,5 +21,6 @@ eof - (frame count) * 16: [(uint64_t, uint64_t)..<frame count] (address, size) o
 
 - `git submodule update --init --recursive --recommend-shallow --depth 1`
 - `scons`
+- `scons target=template_release`
 - `godot project/project.godot` (only first time)
 - `godot --path project/`
