@@ -86,6 +86,8 @@ void GVVideoStreamPlayback::_update(double delta) {
     }
 
     if (reader.has_value()) {
+        // UtilityFunctions::print("GVVideoStreamPlayback::_update() playback_position: ", playback_position);
+
         PackedByteArray buffer = reader->read_at_time(playback_position);
 
         // UtilityFunctions::print("GVVideoStreamPlayback::_update() buffer.size(): ", buffer.size());

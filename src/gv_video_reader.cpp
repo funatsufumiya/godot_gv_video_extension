@@ -66,10 +66,13 @@ GpuVideoReader::GpuVideoReader(Ref<FileAccess> io, bool onMemory) {
         // if(_io->read(_memory.data(), _rawSize) != _rawSize) {
         //     assert(0);
         // }
-        if(_io->get_buffer(_rawSize).size() != _rawSize) {
+        PackedByteArray buf = _io->get_buffer(_rawSize);
+        if (buf.size() != _rawSize) {
             assert(0);
         }
-        memcpy(_memory.data(), _io->get_buffer(_rawSize).ptr(), _rawSize);
+        // UtilityFunctions::print("GpuVideoReader::GpuVideoReader() _rawSize: ", _rawSize);
+        memcpy(_memory.data(), buf.ptr(), _rawSize);
+
 		// _io.reset();
     } else {
 		_io->seek(kRawMemoryAt);
@@ -86,6 +89,7 @@ GpuVideoReader::~GpuVideoReader() {
 
 }
 PackedByteArray GpuVideoReader::read(int frame) {
+    // UtilityFunctions::print("GpuVideoReader::read() frame: ", frame);
     assert(0 <= frame && frame < _lz4Blocks.size());
     Lz4Block lz4block = _lz4Blocks[frame];
     PackedByteArray out_buf;
