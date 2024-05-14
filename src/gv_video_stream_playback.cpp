@@ -21,8 +21,9 @@ GVVideoStreamPlayback::~GVVideoStreamPlayback()
 {
 }
 
-Error GVVideoStreamPlayback::load(Ref<FileAccess> p_file_access, bool onMemory)
+Error GVVideoStreamPlayback::load(Ref<FileAccess> p_file_access, bool onMemory, bool pauseAtEnd)
 {
+    pause_at_end = pauseAtEnd;
     reader.emplace(p_file_access, onMemory);
     return OK;
 }
@@ -84,7 +85,11 @@ void GVVideoStreamPlayback::_update(double delta) {
         playback_position += delta;
         if (playback_position >= _get_length()) {
             playback_position = _get_length();
-            _stop();
+            if (pause_at_end) {
+                _set_paused(true);
+            }else{
+                _stop();
+            }
         }
     }
 

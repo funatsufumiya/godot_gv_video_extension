@@ -21,6 +21,7 @@ protected:
 	static void _bind_methods();
     bool is_playing = false;
     bool is_paused = false;
+    bool pause_at_end = false;
     double playback_position = 0.0;
     Ref<ImageTexture> texture;
     Ref<Image> image;
@@ -30,7 +31,7 @@ public:
     GVVideoStreamPlayback();
     ~GVVideoStreamPlayback();
 
-    Error load(Ref<FileAccess> p_file_access, bool onMemory);
+    Error load(Ref<FileAccess> p_file_access, bool onMemory, bool pauseAtEnd);
 
     void _stop() override;
     void _play() override;
