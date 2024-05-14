@@ -25,6 +25,8 @@ see [Releases](https://github.com/funatsufumiya/godot_gv_video_extension/release
 
 ## Usage
 
+- Unzip `gv_video.zip` on [Releases](https://github.com/funatsufumiya/godot_gv_video_extension/releases) and put `gv_video` into `addons` folder of your Godot project.
+- open your project in Godot
 - create a `VideoStreamPlayer` node
 - set `Stream` property to `GVVideoStream`
 - set `file` property of `GVVideoStream` to a `res://` path of a `.gv` file
