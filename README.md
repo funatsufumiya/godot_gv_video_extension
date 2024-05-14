@@ -23,6 +23,12 @@ eof - (frame count) * 16: [(uint64_t, uint64_t)..<frame count] (address, size) o
 
 see [Releases](https://github.com/funatsufumiya/godot_gv_video_extension/releases)
 
+## Usage
+
+- create a `VideoStreamPlayer` node
+- set `Stream` property to `GVVideoStream`
+- set `file` property of `GVVideoStream` to a `res://` path of a `.gv` file
+
 
 ## Build and Run
 
