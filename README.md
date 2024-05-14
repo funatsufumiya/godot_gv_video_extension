@@ -19,6 +19,11 @@ This enables alpha chanel video support, fast video decoding using compressed te
 eof - (frame count) * 16: [(uint64_t, uint64_t)..<frame count] (address, size) of lz4, address is zero based from file head
 ```
 
+## Install
+
+see [Releases](https://github.com/funatsufumiya/godot_gv_video_extension/releases)
+
+
 ## Build and Run
 
 - `git submodule update --init --recursive --recommend-shallow --depth 1`
