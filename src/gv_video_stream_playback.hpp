@@ -9,6 +9,9 @@
 
 #include "gv_video_reader.hpp"
 
+#include "optional.hpp"
+using nonstd::optional;
+
 using namespace godot;
 
 class GVVideoStreamPlayback : public VideoStreamPlayback {
@@ -21,7 +24,7 @@ protected:
     double playback_position = 0.0;
     Ref<ImageTexture> texture;
     Ref<Image> image;
-    std::optional<GpuVideoReader> reader;
+    optional<GpuVideoReader> reader;
 
 public:
     GVVideoStreamPlayback();

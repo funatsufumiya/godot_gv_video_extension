@@ -24,7 +24,6 @@ GVVideoStreamPlayback::~GVVideoStreamPlayback()
 Error GVVideoStreamPlayback::load(Ref<FileAccess> p_file_access, bool onMemory)
 {
     reader.emplace(p_file_access, onMemory);
-    // reader.emplace(std::make_optional<GpuVideoReader>(p_file_access, onMemory));
     return OK;
 }
 
