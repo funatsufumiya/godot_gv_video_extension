@@ -23,6 +23,8 @@ eof - (frame count) * 16: [(uint64_t, uint64_t)..<frame count] (address, size) o
 
 see [Releases](https://github.com/funatsufumiya/godot_gv_video_extension/releases)
 
+(NOTE: if you need as `git submodule`, use [godot_gv_video_extension_bin](https://github.com/funatsufumiya/godot_gv_video_extension_bin) repository)
+
 ## Usage
 
 - Unzip `gv_video.zip` on [Releases](https://github.com/funatsufumiya/godot_gv_video_extension/releases) and put `gv_video` into `addons` folder of your Godot project.
