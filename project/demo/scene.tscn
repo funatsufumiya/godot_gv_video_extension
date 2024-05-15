@@ -1,6 +1,7 @@
-[gd_scene load_steps=3 format=3 uid="uid://c7u64tpv6byvb"]
+[gd_scene load_steps=4 format=3 uid="uid://c7u64tpv6byvb"]
 
 [ext_resource type="Script" path="res://demo/scene.gd" id="1_lih0m"]
+[ext_resource type="Script" path="res://demo/VideoStreamPlayerEventReceiver.gd" id="2_bskyh"]
 
 [sub_resource type="GVVideoStream" id="GVVideoStream_sunn7"]
 file = "res://alpha-countdown-blue.gv"
@@ -20,10 +21,13 @@ offset_bottom = 323.0
 stream = SubResource("GVVideoStream_sunn7")
 volume_db = -80.0
 autoplay = true
-paused = true
 expand = true
+loop = true
+script = ExtResource("2_bskyh")
 
 [node name="CenterContainer" type="CenterContainer" parent="Node2D"]
 offset_left = -502.0
 offset_top = -270.0
 offset_right = -15.0
+
+[connection signal="finished" from="Node2D/VideoStreamPlayer" to="Node2D/VideoStreamPlayer" method="_on_finished"]

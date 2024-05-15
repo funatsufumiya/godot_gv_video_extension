@@ -86,6 +86,9 @@ void GVVideoStreamPlayback::_update(double delta) {
         if (playback_position >= _get_length()) {
             playback_position = _get_length();
             if (pause_at_end) {
+                // WORKAROUND: to trigger finish signal
+                _stop();
+                playback_position = _get_length();
                 _set_paused(true);
             }else{
                 _stop();
