@@ -16,6 +16,10 @@ void GVVideoStream::_bind_methods()
     ClassDB::bind_method(D_METHOD("get_pause_at_end"), &GVVideoStream::get_pause_at_end);
     ClassDB::bind_method(D_METHOD("set_pause_at_end", "value"), &GVVideoStream::set_pause_at_end);
     ClassDB::add_property(get_class_static(), PropertyInfo(Variant::BOOL, "pause_at_end"), "set_pause_at_end", "get_pause_at_end");
+
+    ClassDB::bind_method(D_METHOD("get_use_parallel_update"), &GVVideoStream::get_use_parallel_update);
+    ClassDB::bind_method(D_METHOD("set_use_parallel_update", "value"), &GVVideoStream::set_use_parallel_update);
+    ClassDB::add_property(get_class_static(), PropertyInfo(Variant::BOOL, "use_parallel_update"), "set_use_parallel_update", "get_use_parallel_update");
 }
 
 GVVideoStream::GVVideoStream()
@@ -41,6 +45,7 @@ Ref<VideoStreamPlayback> GVVideoStream::_instantiate_playback()
     }
     Ref<GVVideoStreamPlayback> pb;
     pb.instantiate();
+    pb->set_use_parallel_update(use_parallel_update);
     if (pb->load(fa, on_memory, pause_at_end) != OK) {
         return nullptr;
     }

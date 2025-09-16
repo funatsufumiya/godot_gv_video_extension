@@ -27,11 +27,23 @@ protected:
     Ref<Image> image;
     optional<GpuVideoReader> reader;
 
+    bool use_parallel_update = false;
+    std::thread decode_thread;
+    std::mutex buffer_mutex;
+    std::condition_variable buffer_cv;
+    bool stop_thread = false;
+    double requested_position = 0.0;
+    PackedByteArray decoded_buffer;
+    bool buffer_ready = false;
+
 public:
     GVVideoStreamPlayback();
     ~GVVideoStreamPlayback();
 
     Error load(Ref<FileAccess> p_file_access, bool onMemory, bool pauseAtEnd);
+
+    void set_use_parallel_update(bool enable) { use_parallel_update = enable; }
+    bool get_use_parallel_update() const { return use_parallel_update; }
 
     void _stop() override;
     void _play() override;
@@ -46,4 +58,5 @@ public:
     void _update(double delta) override;
     int32_t _get_channels() const override;
     int32_t _get_mix_rate() const override;
+    void decode_worker();
 };

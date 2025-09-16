@@ -15,16 +15,26 @@ GVVideoStreamPlayback::GVVideoStreamPlayback()
     if (texture.is_null()) {
         texture = ImageTexture::create_from_image(Image::create(1, 1, false, Image::FORMAT_RGBA8));
     }
+    use_parallel_update = false;
+    stop_thread = false;
 }
 
 GVVideoStreamPlayback::~GVVideoStreamPlayback()
 {
+    stop_thread = true;
+    buffer_cv.notify_all();
+    if (decode_thread.joinable()) decode_thread.join();
 }
 
 Error GVVideoStreamPlayback::load(Ref<FileAccess> p_file_access, bool onMemory, bool pauseAtEnd)
 {
     pause_at_end = pauseAtEnd;
     reader.emplace(p_file_access, onMemory);
+
+    if (use_parallel_update && reader.has_value()) {
+        stop_thread = false;
+        decode_thread = std::thread(&GVVideoStreamPlayback::decode_worker, this);
+    }
     return OK;
 }
 
@@ -33,6 +43,12 @@ void GVVideoStreamPlayback::_stop() {
     playback_position = 0.0;
     is_playing = false;
     is_paused = false;
+
+    if (use_parallel_update) {
+        stop_thread = true;
+        buffer_cv.notify_all();
+        if (decode_thread.joinable()) decode_thread.join();
+    }
 }
 
 void GVVideoStreamPlayback::_play() {
@@ -86,45 +102,45 @@ void GVVideoStreamPlayback::_update(double delta) {
         if (playback_position >= _get_length()) {
             playback_position = _get_length();
             if (pause_at_end) {
-                // WORKAROUND: to trigger finish signal
                 _stop();
                 playback_position = _get_length();
                 _set_paused(true);
-            }else{
+            } else {
                 _stop();
             }
         }
     }
 
-    if (reader.has_value()) {
-        // UtilityFunctions::print("GVVideoStreamPlayback::_update() playback_position: ", playback_position);
+    if (!reader.has_value()) return;
 
-        PackedByteArray buffer = reader->read_at_time(playback_position);
-
-        // UtilityFunctions::print("GVVideoStreamPlayback::_update() buffer.size(): ", buffer.size());
-        // UtilityFunctions::print("GVVideoStreamPlayback::_update() reader->getWidth(): ", reader->getWidth());
-        // UtilityFunctions::print("GVVideoStreamPlayback::_update() reader->getHeight(): ", reader->getHeight());
-        // UtilityFunctions::print("GVVideoStreamPlayback::_update() reader->getGodotImageFormat(): ", reader->getGodotImageFormat());
-
-        // update image
+    if (use_parallel_update) {
+        // 並列デコード: decode_workerがバッファを用意する
+        {
+            std::unique_lock<std::mutex> lock(buffer_mutex);
+            requested_position = playback_position;
+            buffer_cv.notify_all();
+            if (!buffer_ready) {
+                // 直近のバッファがまだなら少し待つ
+                buffer_cv.wait_for(lock, std::chrono::milliseconds(2));
+            }
+            if (!buffer_ready) return; // バッファ未用意ならスキップ
+        }
+        PackedByteArray buffer;
+        {
+            std::lock_guard<std::mutex> lock(buffer_mutex);
+            buffer = decoded_buffer;
+            buffer_ready = false;
+        }
+        // 以降は通常通り描画
         if (image.is_null()) {
-            // UtilityFunctions::print("GVVideoStreamPlayback::_update() image is null");
-            
-            // create dummy buffer for test
-            // PackedByteArray dummy_buffer;
-            // dummy_buffer.resize(reader->getWidth() * reader->getHeight() * 4);
-
             image = Image::create_from_data(
                 reader->getWidth(),
                 reader->getHeight(),
                 false,
                 reader->getGodotImageFormat(),
                 buffer
-                // Image::FORMAT_RGBA8,
-                // dummy_buffer
             );
-        }else {
-            // UtilityFunctions::print("GVVideoStreamPlayback::_update() image is not null");
+        } else {
             image->set_data(
                 reader->getWidth(),
                 reader->getHeight(),
@@ -133,28 +149,68 @@ void GVVideoStreamPlayback::_update(double delta) {
                 buffer
             );
         }
-
-        // UtilityFunctions::print("GVVideoStreamPlayback::_update() image->get_width(): ", image->get_width());
-        // UtilityFunctions::print("GVVideoStreamPlayback::_update() image->get_height(): ", image->get_height());
-
-        // update texture
         if (texture.is_null()) {
-            // UtilityFunctions::print("GVVideoStreamPlayback::_update() texture is null");
             texture = ImageTexture::create_from_image(image);
-        }else if (!texture.is_valid()
+        } else if (!texture.is_valid()
             || texture->get_width() != reader->getWidth()
             || texture->get_height() != reader->getHeight()
-            || texture->get_format() != reader->getGodotImageFormat()
-            )
-        {
+            || texture->get_format() != reader->getGodotImageFormat()) {
             texture->set_image(image);
-        }else{
+        } else {
+            texture->update(image);
+        }
+    } else {
+        // 従来通り同期デコード
+        PackedByteArray buffer = reader->read_at_time(playback_position);
+        if (image.is_null()) {
+            image = Image::create_from_data(
+                reader->getWidth(),
+                reader->getHeight(),
+                false,
+                reader->getGodotImageFormat(),
+                buffer
+            );
+        } else {
+            image->set_data(
+                reader->getWidth(),
+                reader->getHeight(),
+                false,
+                reader->getGodotImageFormat(),
+                buffer
+            );
+        }
+        if (texture.is_null()) {
+            texture = ImageTexture::create_from_image(image);
+        } else if (!texture.is_valid()
+            || texture->get_width() != reader->getWidth()
+            || texture->get_height() != reader->getHeight()
+            || texture->get_format() != reader->getGodotImageFormat()) {
+            texture->set_image(image);
+        } else {
             texture->update(image);
         }
     }
-    
-
-    // UtilityFunctions::print("GVVideoStreamPlayback::_update() playback_position: ", playback_position);
+}
+// 並列デコード用ワーカースレッド
+void GVVideoStreamPlayback::decode_worker() {
+    while (!stop_thread) {
+        double pos = 0.0;
+        {
+            std::unique_lock<std::mutex> lock(buffer_mutex);
+            buffer_cv.wait(lock, [this]{ return stop_thread || requested_position >= 0.0; });
+            if (stop_thread) break;
+            pos = requested_position;
+        }
+        if (reader.has_value()) {
+            PackedByteArray buf = reader->read_at_time(pos);
+            {
+                std::lock_guard<std::mutex> lock(buffer_mutex);
+                decoded_buffer = buf;
+                buffer_ready = true;
+            }
+            buffer_cv.notify_all();
+        }
+    }
 }
 
 int32_t GVVideoStreamPlayback::_get_channels() const {
