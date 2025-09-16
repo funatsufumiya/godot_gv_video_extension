@@ -6,6 +6,9 @@
 #include <godot_cpp/classes/texture2d.hpp>
 #include <godot_cpp/classes/image_texture.hpp>
 #include <godot_cpp/core/class_db.hpp>
+#include <thread>
+#include <mutex>
+#include <condition_variable>
 
 #include "gv_video_reader.hpp"
 

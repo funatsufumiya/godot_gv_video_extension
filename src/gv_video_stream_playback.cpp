@@ -114,16 +114,14 @@ void GVVideoStreamPlayback::_update(double delta) {
     if (!reader.has_value()) return;
 
     if (use_parallel_update) {
-        // 並列デコード: decode_workerがバッファを用意する
         {
             std::unique_lock<std::mutex> lock(buffer_mutex);
             requested_position = playback_position;
             buffer_cv.notify_all();
             if (!buffer_ready) {
-                // 直近のバッファがまだなら少し待つ
                 buffer_cv.wait_for(lock, std::chrono::milliseconds(2));
             }
-            if (!buffer_ready) return; // バッファ未用意ならスキップ
+            if (!buffer_ready) return;
         }
         PackedByteArray buffer;
         {
@@ -131,7 +129,6 @@ void GVVideoStreamPlayback::_update(double delta) {
             buffer = decoded_buffer;
             buffer_ready = false;
         }
-        // 以降は通常通り描画
         if (image.is_null()) {
             image = Image::create_from_data(
                 reader->getWidth(),
@@ -160,7 +157,6 @@ void GVVideoStreamPlayback::_update(double delta) {
             texture->update(image);
         }
     } else {
-        // 従来通り同期デコード
         PackedByteArray buffer = reader->read_at_time(playback_position);
         if (image.is_null()) {
             image = Image::create_from_data(
@@ -191,7 +187,7 @@ void GVVideoStreamPlayback::_update(double delta) {
         }
     }
 }
-// 並列デコード用ワーカースレッド
+
 void GVVideoStreamPlayback::decode_worker() {
     while (!stop_thread) {
         double pos = 0.0;
