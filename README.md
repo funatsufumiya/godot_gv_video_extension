@@ -4,7 +4,7 @@
 
 This enables **alpha chanel (opacity)** video, and fast video decoding using compressed texture format like DXT1, DXT3, DXT5.
 
-- Tested on Godot 4.2, on Windows/macOS. probably also works on Linux.
+- Tested on Godot 4.2, on Windows/macOS/Ubuntu.
 
 ## Binary file format (gv)
 
