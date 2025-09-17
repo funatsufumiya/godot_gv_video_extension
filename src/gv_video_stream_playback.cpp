@@ -33,6 +33,14 @@ Error GVVideoStreamPlayback::load(Ref<FileAccess> p_file_access, bool onMemory, 
 
     if (use_parallel_update && reader.has_value()) {
         stop_thread = false;
+        if (decode_thread.joinable()) {
+            stop_thread = true;
+            buffer_cv.notify_all();
+            decode_thread.join();
+            stop_thread = false;
+        }
+        buffer_ready = false;
+        requested_position = -1.0;
         decode_thread = std::thread(&GVVideoStreamPlayback::decode_worker, this);
     }
     return OK;
@@ -43,12 +51,7 @@ void GVVideoStreamPlayback::_stop() {
     playback_position = 0.0;
     is_playing = false;
     is_paused = false;
-
-    if (use_parallel_update) {
-        stop_thread = true;
-        buffer_cv.notify_all();
-        if (decode_thread.joinable()) decode_thread.join();
-    }
+    // 並列スレッドはここでは止めない（load/unloadで管理）
 }
 
 void GVVideoStreamPlayback::_play() {
@@ -114,21 +117,32 @@ void GVVideoStreamPlayback::_update(double delta) {
     if (!reader.has_value()) return;
 
     if (use_parallel_update) {
-        {
-            std::unique_lock<std::mutex> lock(buffer_mutex);
-            requested_position = playback_position;
-            buffer_cv.notify_all();
-            if (!buffer_ready) {
-                buffer_cv.wait_for(lock, std::chrono::milliseconds(2));
-            }
-            if (!buffer_ready) return;
-        }
-        PackedByteArray buffer;
+        bool need_new_frame = false;
         {
             std::lock_guard<std::mutex> lock(buffer_mutex);
-            buffer = decoded_buffer;
-            buffer_ready = false;
+            if (!buffer_ready && requested_position != playback_position) {
+                requested_position = playback_position;
+                need_new_frame = true;
+            }
         }
+        if (need_new_frame) {
+            buffer_cv.notify_all();
+        }
+        PackedByteArray buffer;
+        bool got_new_frame = false;
+        {
+            std::unique_lock<std::mutex> lock(buffer_mutex);
+            if (buffer_ready) {
+                buffer = decoded_buffer;
+                buffer_ready = false;
+                got_new_frame = true;
+            }
+        }
+        if (!got_new_frame && !decoded_buffer.is_empty()) {
+            std::lock_guard<std::mutex> lock(buffer_mutex);
+            buffer = decoded_buffer;
+        }
+        if (buffer.is_empty()) return;
         if (image.is_null()) {
             image = Image::create_from_data(
                 reader->getWidth(),
@@ -189,20 +203,24 @@ void GVVideoStreamPlayback::_update(double delta) {
 }
 
 void GVVideoStreamPlayback::decode_worker() {
+    double last_position = -1.0;
     while (!stop_thread) {
-        double pos = 0.0;
+        double pos = -1.0;
         {
             std::unique_lock<std::mutex> lock(buffer_mutex);
-            buffer_cv.wait(lock, [this]{ return stop_thread || requested_position >= 0.0; });
+            buffer_cv.wait(lock, [this, &last_position]{
+                return stop_thread || (requested_position != last_position && !buffer_ready);
+            });
             if (stop_thread) break;
             pos = requested_position;
         }
-        if (reader.has_value()) {
+        if (reader.has_value() && pos >= 0.0) {
             PackedByteArray buf = reader->read_at_time(pos);
             {
                 std::lock_guard<std::mutex> lock(buffer_mutex);
                 decoded_buffer = buf;
                 buffer_ready = true;
+                last_position = pos;
             }
             buffer_cv.notify_all();
         }
